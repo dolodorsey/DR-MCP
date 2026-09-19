@@ -1,4 +1,4 @@
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://dzlmtvodpyhetvektfuo.supabase.co";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://wfkohcwxxsrhcxhepfql.supabase.co";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function assertConfigured() {
