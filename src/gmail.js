@@ -15,10 +15,15 @@ async function getAccount(accountId) {
   assertUuid(accountId);
   const rows = await select(
     "connected_accounts",
-    `id=eq.${accountId}&provider=eq.gmail&platform=eq.email&select=*&limit=1`
+    `id=eq.${accountId}&select=*&limit=1`
   );
   const account = rows[0];
   if (!account) throw new Error("Gmail account not found");
+
+  const canonical = account.provider === "google" && account.platform === "gmail";
+  const legacy = account.provider === "gmail" && account.platform === "email";
+  if (!canonical && !legacy) throw new Error("Selected account is not a Gmail account");
+
   if (account.connection_status !== "connected") throw new Error("Gmail account is not connected");
   return account;
 }
@@ -26,9 +31,11 @@ async function getAccount(accountId) {
 async function getCredential(accountId) {
   const rows = await select(
     "connected_account_credentials",
-    `connected_account_id=eq.${accountId}&provider=eq.gmail&credential_type=eq.oauth&status=eq.active&select=*&order=updated_at.desc&limit=1`
+    `connected_account_id=eq.${accountId}&status=eq.active&select=*&order=updated_at.desc`
   );
-  const credential = rows[0];
+  const credential =
+    rows.find((row) => row.provider === "google" && row.credential_type === "oauth2") ||
+    rows.find((row) => row.provider === "gmail" && row.credential_type === "oauth");
   if (!credential) throw new Error("Active OAuth credential not found for this account");
   return credential;
 }
