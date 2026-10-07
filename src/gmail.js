@@ -1,3 +1,6 @@
+// Founder stop, 2026-10-07: no sends/replies; Muse obtains exact founder approval.
+const FOUNDER_OUTBOUND_HOLD = true;
+const founderHold = () => ({ ok:false, paused:true, sent:false, error:"outbound_paused_by_founder", approval_required:true, executor:"Muse", instruction:"Sending is stopped. Muse must obtain Dr. Dorsey approval for the exact brand, recipients, sender, content and timing. Do not resume automation." });
 import { decryptSecret, encryptSecret } from "./vault.js";
 import { insert, select, update } from "./supabase.js";
 import { buildRawEmail, normalizeGmailMessage } from "./mime.js";
@@ -91,6 +94,9 @@ async function accessToken(account, credential, force = false) {
 }
 
 export async function gmailRequest(accountId, path, options = {}) {
+  if (FOUNDER_OUTBOUND_HOLD && /^\/(messages|drafts)\/send\/?$/.test(String(path).split("?")[0])) {
+    throw new Error("outbound_paused_by_founder");
+  }
   const account = await getAccount(accountId);
   const credential = await getCredential(account.id);
 
@@ -203,6 +209,7 @@ function sendApproved(account, confirmed) {
 }
 
 export async function sendMessage(accountId, message, { confirmed = false, requestedBy = "mcp-client" } = {}) {
+  if (FOUNDER_OUTBOUND_HOLD) return founderHold();
   const account = await getAccount(accountId);
   requireCapability(account, message.threadId ? "can_reply" : "can_send");
   const recipients = Array.isArray(message.to) ? message.to : [message.to];
